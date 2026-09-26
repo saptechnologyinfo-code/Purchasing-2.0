@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SAP Cash Flow</title>
+<link rel="icon" href="data:,">
+<link rel="manifest" href='data:application/manifest+json,{"name":"SAP%20Cash%20Flow","short_name":"CashFlow","start_url":".","display":"standalone","background_color":"%23F1F0EC","theme_color":"%232F6F5E","icons":[{"src":"data:image/svg%2Bxml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%20192%20192%27%3E%3Crect%20width=%27192%27%20height=%27192%27%20rx=%2728%27%20fill=%27%232F6F5E%27/%3E%3Ctext%20x=%2796%27%20y=%27128%27%20font-size=%27110%27%20fill=%27white%27%20text-anchor=%27middle%27%20font-family=%27sans-serif%27%3ES%3C/text%3E%3C/svg%3E","sizes":"192x192","type":"image/svg+xml"}]}'>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#F1F0EC; --surface:#FFFFFF; --ink:#1E2A28; --sub:#5B6B67;
+    --line:#DDD8CC; --teal:#2F6F5E; --teal-ink:#1F4F42; --copper:#C97A3D; --danger:#B4472F;
+    --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --bg:#161C1B; --surface:#1F2624; --ink:#EDECE6; --sub:#9BA8A4; --line:#33403C; }
+  }
+  :root[data-theme="dark"]{ --bg:#161C1B; --surface:#1F2624; --ink:#EDECE6; --sub:#9BA8A4; --line:#33403C; }
+  *{box-sizing:border-box;}
+  html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+  body{ margin:0; font-family:var(--sans); background:var(--bg); color:var(--ink);
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); min-height:100%; }
+  header{ padding:20px 20px 0; }
+  h1{ font-size:22px; margin:0 0 2px; font-weight:600; letter-spacing:-0.01em; }
+  .tagline{ color:var(--sub); font-size:13px; margin:0 0 14px; }
+  .stats{ display:flex; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .stat{ flex:1; padding:12px 10px; border-right:1px solid var(--line); }
+  .stat:last-child{ border-right:none; }
+  .stat .n{ font-family:var(--mono); font-size:18px; font-weight:600; display:block; }
+  .stat .l{ font-size:11.5px; color:var(--sub); }
+  nav{ display:flex; overflow-x:auto; gap:2px; padding:10px 20px; background:var(--bg); position:sticky; top:env(safe-area-inset-top,0px); z-index:5; }
+  nav button{ font-family:var(--sans); font-size:13.5px; padding:8px 14px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink); border-radius:7px; cursor:pointer; white-space:nowrap; }
+  nav button.active{ background:var(--teal); border-color:var(--teal); color:#fff; }
+  main{ padding:6px 20px 40px; max-width:760px; margin:0 auto; }
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+  form{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:18px; }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .field{ flex:1 1 140px; margin-bottom:10px; }
+  label{ font-size:12px; color:var(--sub); display:block; margin-bottom:4px; }
+  input,select,textarea{ width:100%; font-family:var(--sans); font-size:14px; padding:9px 10px;
+    border:1px solid var(--line); border-radius:7px; background:var(--bg); color:var(--ink); }
+  input:focus,select:focus,textarea:focus{ outline:2px solid var(--teal); outline-offset:1px; }
+  .btn{ font-family:var(--sans); font-size:14px; font-weight:500; padding:10px 16px; border-radius:7px;
+    border:none; background:var(--teal); color:#fff; cursor:pointer; }
+  .btn:active{ background:var(--teal-ink); }
+  .btn.ghost{ background:transparent; color:var(--teal); border:1px solid var(--teal); }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  th,td{ text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); }
+  th{ color:var(--sub); font-weight:500; font-size:11.5px; }
+  td.amt{ font-family:var(--mono); text-align:right; }
+  .tablewrap{ overflow-x:auto; background:var(--surface); border:1px solid var(--line); border-radius:10px; }
+  .pill{ font-size:11px; padding:2px 8px; border-radius:20px; font-family:var(--mono); }
+  .pill.paid,.pill.cleared{ background:#E4F1EC; color:var(--teal-ink); }
+  .pill.unpaid,.pill.pending{ background:#FBEADA; color:var(--copper); }
+  .pill.bounced{ background:#F8DEDA; color:var(--danger); }
+  .header-actions{ display:flex; gap:8px; align-items:flex-start; }
+  #loginScreen{ position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; }
+  #loginScreen form{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:26px 22px; width:100%; max-width:320px; }
+  #loginScreen h2{ margin:0 0 2px; font-size:19px; font-weight:600; }
+  #loginScreen .tagline{ margin-bottom:16px; }
+  .login-error{ color:var(--danger); font-size:12.5px; min-height:16px; margin:-2px 0 8px; }
+  .empty{ padding:20px; color:var(--sub); font-size:13.5px; text-align:center; }
+  small.hint{ color:var(--sub); font-size:12px; }
+  .cards{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .card{ flex:1 1 140px; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .card .n{ font-family:var(--mono); font-size:19px; font-weight:600; display:block; }
+  .card .l{ font-size:11.5px; color:var(--sub); }
+  .chartbox{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:16px; }
+  .chartbox h3{ font-size:13px; font-weight:500; color:var(--sub); margin:0 0 10px; }
+  .chartbox canvas{ max-height:220px; }
+  .toprow{ display:flex; justify-content:space-between; align-items:center; }
+  .refresh{ background:transparent; border:1px solid var(--line); border-radius:7px; padding:6px 12px; font-family:var(--sans); font-size:12.5px; color:var(--ink); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <form id="form-login">
+    <h2>SAP Cash Flow</h2>
+    <p class="tagline">Sign in to continue</p>
+    <div class="field"><label>Username</label><input required id="loginUser" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input required id="loginPass" type="password" autocomplete="current-password"></div>
+    <div id="loginError" class="login-error"></div>
+    <button class="btn" type="submit" style="width:100%;">Sign in</button>
+  </form>
+</div>
+
+<div id="app" style="display:none;">
+
+<header>
+  <div class="toprow">
+    <div>
+      <h1>SAP Cash Flow</h1>
+      <p class="tagline">Dealers · Sales · Purchases · Payments</p>
+    </div>
+    <div class="header-actions">
+      <button class="refresh" id="installBtn" style="display:none;">Install app</button>
+      <button class="refresh" id="logoutBtn">Log out</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="n" id="statSales">—</span><span class="l">Sales total</span></div>
+    <div class="stat"><span class="n" id="statPurchases">—</span><span class="l">Purchases total</span></div>
+    <div class="stat"><span class="n" id="statPending">—</span><span class="l">Pending cheques</span></div>
+  </div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="dealers" class="active">Dealers</button>
+  <button data-tab="sales">Selling</button>
+  <button data-tab="purchases">Purchasing</button>
+  <button data-tab="payments">Payments</button>
+  <button data-tab="analytics">Analytics</button>
+</nav>
+
+<main>
+
+  <section class="panel active" id="panel-dealers">
+    <form id="form-dealer">
+      <div class="row">
+        <div class="field"><label>Name</label><input required name="name"></div>
+        <div class="field"><label>Phone</label><input name="phone"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Type</label>
+          <select name="type"><option>Supplier</option><option>Customer</option><option>Both</option></select>
+        </div>
+        <div class="field"><label>Address</label><input name="address"></div>
+      </div>
+      <button class="btn" type="submit">Register dealer</button>
+    </form>
+    <div class="tablewrap"><table><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Phone</th><th>Registered</th></tr></thead><tbody id="list-dealers"></tbody></table></div>
+  </section>
+
+  <section class="panel" id="panel-sales">
+    <form id="form-sale">
+      <div class="row">
+        <div class="field"><label>Dealer / Customer</label><input name="dealerName" placeholder="Walk-in"></div>
+        <div class="field"><label>Date</label><input type="date" name="date"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Item / description</label><input required name="item"></div>
+        <div class="field"><label>Amount</label><input required type="number" step="0.01" name="amount"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Status</label><select name="status"><option>Paid</option><option>Unpaid</option></select></div>
+        <div class="field"><label>Notes</label><input name="notes"></div>
+      </div>
+      <button class="btn" type="submit">Record sale</button>
+    </form>
+    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Dealer</th><th>Item</th><th>Amount</th><th>Status</th></tr></thead><tbody id="list-sales"></tbody></table></div>
+  </section>
+
+  <section class="panel" id="panel-purchases">
+    <form id="form-purchase">
+      <div class="row">
+        <div class="field"><label>Supplier</label><input required name="dealerName"></div>
+        <div class="field"><label>Date</label><input type="date" name="date"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Item / description</label><input required name="item"></div>
+        <div class="field"><label>Amount</label><input required type="number" step="0.01" name="amount"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Status</label><select name="status"><option>Unpaid</option><option>Paid</option></select></div>
+        <div class="field"><label>Notes</label><input name="notes"></div>
+      </div>
+      <button class="btn" type="submit">Record purchase</button>
+    </form>
+    <div class="tablewrap"><table><thead><tr><th>ID</th><th>Date</th><th>Supplier</th><th>Item</th><th>Amount</th><th>Status</th></tr></thead><tbody id="list-purchases"></tbody></table></div>
+  </section>
+
+  <section class="panel" id="panel-payments">
+    <form id="form-payment">
+      <div class="row">
+        <div class="field"><label>Link to purchase (optional)</label><select name="purchaseId"><option value="">— none —</option></select></div>
+        <div class="field"><label>Dealer</label><input required name="dealerName"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Method</label>
+          <select name="method" id="paymentMethod"><option>Cash</option><option>Cheque</option><option>Credit</option></select>
+        </div>
+        <div class="field"><label>Amount</label><input required type="number" step="0.01" name="amount"></div>
+      </div>
+      <div class="row" id="chequeFields" style="display:none;">
+        <div class="field"><label>Cheque no.</label><input name="chequeNo"></div>
+        <div class="field"><label>Cheque date</label><input type="date" name="chequeDate"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Date</label><input type="date" name="date"></div>
+        <div class="field"><label>Notes</label><input name="notes"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+        <input type="checkbox" name="markPaid" style="width:auto;"> Mark linked purchase as paid
+      </label>
+      <button class="btn" type="submit">Record payment</button>
+    </form>
+    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Dealer</th><th>Method</th><th>Cheque</th><th>Amount</th><th>Status</th></tr></thead><tbody id="list-payments"></tbody></table></div>
+  </section>
+
+  <section class="panel" id="panel-analytics">
+    <div class="toprow" style="margin-bottom:14px;">
+      <small class="hint">Figures update from the sheet each time you open this tab.</small>
+      <button class="refresh" id="reloadData" type="button">Refresh</button>
+    </div>
+    <div class="cards">
+      <div class="card"><span class="n" id="anNet">—</span><span class="l">Net cash flow</span></div>
+      <div class="card"><span class="n" id="anAvgSale">—</span><span class="l">Avg. sale value</span></div>
+      <div class="card"><span class="n" id="anTopDealer">—</span><span class="l">Top supplier (by spend)</span></div>
+    </div>
+    <div class="chartbox">
+      <h3>Cash in vs cash out, by month</h3>
+      <canvas id="chartMonthly"></canvas>
+    </div>
+    <div class="row">
+      <div class="chartbox" style="flex:1 1 240px;">
+        <h3>Purchase payments by method</h3>
+        <canvas id="chartMethod"></canvas>
+      </div>
+      <div class="chartbox" style="flex:1 1 240px;">
+        <h3>Sales: paid vs unpaid</h3>
+        <canvas id="chartSalesStatus"></canvas>
+      </div>
+    </div>
+    <div class="chartbox">
+      <h3>Pending cheques</h3>
+      <div class="tablewrap" style="border:none;"><table><thead><tr><th>Dealer</th><th>Cheque no.</th><th>Cheque date</th><th>Amount</th></tr></thead><tbody id="list-pendingCheques"></tbody></table></div>
+    </div>
+  </section>
+
+</main>
+
+</div><!-- /#app -->
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+
+  // ---- Paste your deployed Apps Script Web App URL below (ends in /exec) ----
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZYlP9XxgwYJU7x1vb28127ypSzUvEgYezm5J9tSymRQ1rDjquprN9v8F9nUl8RkXgjg/exec";
+
+  // ---- Login accounts: add/change usernames and passwords here ----
+  // NOTE: this only gates casual access on a shared device — the passwords live in
+  // the page's own code, so don't reuse a sensitive password here.
+  const USERS = {
+    "admin": "changeme"
+  };
+  const AUTH_KEY = 'cashflow_auth';
+
+  let cache = { dealers:[], sales:[], purchases:[], payments:[] };
+  let charts = {};
+
+  // tabs
+  $$('#tabs button').forEach(b=>b.addEventListener('click',()=>{
+    $$('#tabs button').forEach(x=>x.classList.remove('active'));
+    $$('.panel').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    $('#panel-'+b.dataset.tab).classList.add('active');
+  }));
+
+  $('#paymentMethod').addEventListener('change', e=>{
+    $('#chequeFields').style.display = e.target.value==='Cheque' ? 'flex' : 'none';
+  });
+
+  function money(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  async function api(action, method, body){
+    if(!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_') === 0){
+      alert('This page has no Apps Script Web App URL yet. Open index.html and set SCRIPT_URL near the top of the <script> section.');
+      throw new Error('no url');
+    }
+    if(method==='GET'){
+      const res = await fetch(SCRIPT_URL + '?action=' + action);
+      return res.json();
+    }
+    const res = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(body) });
+    return res.json();
+  }
+
+  async function loadAll(){
+    try{
+      const data = await api('all','GET');
+      if(!data.ok) return;
+      cache = data;
+      renderDealers(); renderSales(); renderPurchases(); renderPayments(); renderStats(); renderAnalytics();
+    }catch(err){ console.error(err); }
+  }
+
+  function renderStats(){
+    const salesTotal = cache.sales.reduce((s,r)=>s+Number(r.Amount||0),0);
+    const purchTotal = cache.purchases.reduce((s,r)=>s+Number(r.Amount||0),0);
+    const pending = cache.payments.filter(p=>p.Method==='Cheque' && p.Status==='Pending').reduce((s,r)=>s+Number(r.Amount||0),0);
+    $('#statSales').textContent = money(salesTotal);
+    $('#statPurchases').textContent = money(purchTotal);
+    $('#statPending').textContent = money(pending);
+  }
+
+  function renderDealers(){
+    const tb = $('#list-dealers'); tb.innerHTML='';
+    if(!cache.dealers.length){ tb.innerHTML = '<tr><td colspan=5 class="empty">No dealers yet</td></tr>'; return; }
+    cache.dealers.slice().reverse().forEach(d=>{
+      tb.insertAdjacentHTML('beforeend', `<tr><td>${d.ID}</td><td>${d.Name}</td><td>${d.Type}</td><td>${d.Phone||''}</td><td>${d.RegisteredDate||''}</td></tr>`);
+    });
+  }
+
+  function renderSales(){
+    const tb = $('#list-sales'); tb.innerHTML='';
+    if(!cache.sales.length){ tb.innerHTML = '<tr><td colspan=5 class="empty">No sales yet</td></tr>'; return; }
+    cache.sales.slice().reverse().forEach(r=>{
+      tb.insertAdjacentHTML('beforeend', `<tr><td>${r.Date||''}</td><td>${r.DealerName||''}</td><td>${r.Item||''}</td><td class="amt">${money(r.Amount)}</td><td><span class="pill ${String(r.Status).toLowerCase()}">${r.Status}</span></td></tr>`);
+    });
+  }
+
+  function renderPurchases(){
+    const tb = $('#list-purchases'); tb.innerHTML='';
+    const sel = $('select[name=purchaseId]');
+    sel.innerHTML = '<option value="">— none —</option>';
+    if(!cache.purchases.length){ tb.innerHTML = '<tr><td colspan=6 class="empty">No purchases yet</td></tr>'; return; }
+    cache.purchases.slice().reverse().forEach(r=>{
+      tb.insertAdjacentHTML('beforeend', `<tr><td>${r.ID}</td><td>${r.Date||''}</td><td>${r.DealerName||''}</td><td>${r.Item||''}</td><td class="amt">${money(r.Amount)}</td><td><span class="pill ${String(r.Status).toLowerCase()}">${r.Status}</span></td></tr>`);
+      if(r.Status!=='Paid') sel.insertAdjacentHTML('beforeend', `<option value="${r.ID}">${r.ID} — ${r.DealerName} (${money(r.Amount)})</option>`);
+    });
+  }
+
+  function renderPayments(){
+    const tb = $('#list-payments'); tb.innerHTML='';
+    if(!cache.payments.length){ tb.innerHTML = '<tr><td colspan=6 class="empty">No payments yet</td></tr>'; return; }
+    cache.payments.slice().reverse().forEach(r=>{
+      tb.insertAdjacentHTML('beforeend', `<tr><td>${r.Date||''}</td><td>${r.DealerName||''}</td><td>${r.Method}</td><td>${r.ChequeNo||''}</td><td class="amt">${money(r.Amount)}</td><td><span class="pill ${String(r.Status).toLowerCase()}">${r.Status}</span></td></tr>`);
+    });
+  }
+
+  function formToBody(form){
+    const fd = new FormData(form); const o = {};
+    fd.forEach((v,k)=>{ o[k] = k==='markPaid' ? true : v; });
+    return o;
+  }
+
+  $('#form-dealer').addEventListener('submit', async e=>{
+    e.preventDefault();
+    await api('addDealer','POST', formToBody(e.target));
+    e.target.reset(); loadAll();
+  });
+  $('#form-sale').addEventListener('submit', async e=>{
+    e.preventDefault();
+    await api('addSale','POST', formToBody(e.target));
+    e.target.reset(); loadAll();
+  });
+  $('#form-purchase').addEventListener('submit', async e=>{
+    e.preventDefault();
+    await api('addPurchase','POST', formToBody(e.target));
+    e.target.reset(); loadAll();
+  });
+  $('#form-payment').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const body = formToBody(e.target);
+    if(body.purchaseId){
+      const p = cache.purchases.find(x=>x.ID===body.purchaseId);
+      if(p) body.dealerName = body.dealerName || p.DealerName;
+    }
+    await api('addPayment','POST', body);
+    e.target.reset(); $('#chequeFields').style.display='none'; loadAll();
+  });
+
+  $('#reloadData').addEventListener('click', loadAll);
+
+  function monthKey(dateStr){
+    const d = new Date(dateStr); if(isNaN(d)) return 'Unknown';
+    return d.toLocaleString(undefined,{month:'short',year:'2-digit'});
+  }
+
+  function renderAnalytics(){
+    if(typeof Chart === 'undefined') return;
+    const salesTotal = cache.sales.reduce((s,r)=>s+Number(r.Amount||0),0);
+    const purchTotal = cache.purchases.reduce((s,r)=>s+Number(r.Amount||0),0);
+    $('#anNet').textContent = money(salesTotal - purchTotal);
+    $('#anAvgSale').textContent = cache.sales.length ? money(salesTotal/cache.sales.length) : '0.00';
+
+    const bySupplier = {};
+    cache.purchases.forEach(p=>{ bySupplier[p.DealerName||'—'] = (bySupplier[p.DealerName||'—']||0) + Number(p.Amount||0); });
+    const topEntry = Object.entries(bySupplier).sort((a,b)=>b[1]-a[1])[0];
+    $('#anTopDealer').textContent = topEntry ? `${topEntry[0]}` : '—';
+
+    // monthly cash in/out
+    const months = {};
+    cache.sales.forEach(r=>{ const k=monthKey(r.Date); months[k]=months[k]||{in:0,out:0}; months[k].in += Number(r.Amount||0); });
+    cache.purchases.forEach(r=>{ const k=monthKey(r.Date); months[k]=months[k]||{in:0,out:0}; months[k].out += Number(r.Amount||0); });
+    const labels = Object.keys(months);
+    drawChart('chartMonthly','bar',{
+      labels, datasets:[
+        {label:'Cash in (sales)', data: labels.map(l=>months[l].in), backgroundColor:'#2F6F5E'},
+        {label:'Cash out (purchases)', data: labels.map(l=>months[l].out), backgroundColor:'#C97A3D'}
+      ]}, {plugins:{legend:{position:'bottom'}}});
+
+    // payment method breakdown
+    const methodTotals = {Cash:0,Cheque:0,Credit:0};
+    cache.payments.forEach(p=>{ methodTotals[p.Method] = (methodTotals[p.Method]||0) + Number(p.Amount||0); });
+    drawChart('chartMethod','doughnut',{
+      labels:Object.keys(methodTotals), datasets:[{data:Object.values(methodTotals), backgroundColor:['#2F6F5E','#C97A3D','#5B6B67']}]
+    }, {plugins:{legend:{position:'bottom'}}});
+
+    // sales paid vs unpaid
+    const paid = cache.sales.filter(s=>s.Status==='Paid').reduce((s,r)=>s+Number(r.Amount||0),0);
+    const unpaid = cache.sales.filter(s=>s.Status==='Unpaid').reduce((s,r)=>s+Number(r.Amount||0),0);
+    drawChart('chartSalesStatus','doughnut',{
+      labels:['Paid','Unpaid'], datasets:[{data:[paid,unpaid], backgroundColor:['#2F6F5E','#B4472F']}]
+    }, {plugins:{legend:{position:'bottom'}}});
+
+    // pending cheques
+    const tb = $('#list-pendingCheques'); tb.innerHTML='';
+    const pending = cache.payments.filter(p=>p.Method==='Cheque' && p.Status==='Pending');
+    if(!pending.length){ tb.innerHTML = '<tr><td colspan=4 class="empty">No pending cheques</td></tr>'; }
+    pending.forEach(p=>{
+      tb.insertAdjacentHTML('beforeend', `<tr><td>${p.DealerName||''}</td><td>${p.ChequeNo||''}</td><td>${p.ChequeDate||''}</td><td class="amt">${money(p.Amount)}</td></tr>`);
+    });
+  }
+
+  function drawChart(id, type, data, options){
+    const ctx = document.getElementById(id);
+    if(!ctx) return;
+    if(charts[id]) charts[id].destroy();
+    charts[id] = new Chart(ctx, { type, data, options: Object.assign({responsive:true, maintainAspectRatio:false}, options||{}) });
+  }
+
+  loadAll();
+
+  // --- Login gate ---
+  function showApp(){
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadAll();
+  }
+  function showLogin(){
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+  $('#form-login').addEventListener('submit', e=>{
+    e.preventDefault();
+    const u = $('#loginUser').value.trim();
+    const p = $('#loginPass').value;
+    if(USERS[u] && USERS[u] === p){
+      localStorage.setItem(AUTH_KEY, u);
+      $('#loginError').textContent = '';
+      e.target.reset();
+      showApp();
+    } else {
+      $('#loginError').textContent = 'Incorrect username or password.';
+    }
+  });
+  $('#logoutBtn').addEventListener('click', ()=>{
+    localStorage.removeItem(AUTH_KEY);
+    showLogin();
+  });
+  if(localStorage.getItem(AUTH_KEY) && USERS[localStorage.getItem(AUTH_KEY)]){
+    showApp();
+  } else {
+    showLogin();
+  }
+
+  // --- PWA install ---
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', e=>{
+    e.preventDefault(); deferredPrompt = e;
+    $('#installBtn').style.display = 'inline-block';
+  });
+  $('#installBtn').addEventListener('click', async ()=>{
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    $('#installBtn').style.display = 'none';
+  });
+  window.addEventListener('appinstalled', ()=> $('#installBtn').style.display='none');
+
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+    try{
+      const swCode = "self.addEventListener('install',e=>self.skipWaiting());"+
+        "self.addEventListener('activate',e=>self.clients.claim());"+
+        "self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});";
+      const blob = new Blob([swCode], {type:'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(err=>{
+        console.warn('SW registration failed', err);
+      });
+    }catch(err){ console.warn('SW registration skipped', err); }
+  }
+})();
+</script>
+</body>
+</html>
