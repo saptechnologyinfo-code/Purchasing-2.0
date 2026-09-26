@@ -11,14 +11,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
-    --bg:#F1F0EC; --surface:#FFFFFF; --ink:#1E2A28; --sub:#5B6B67;
-    --line:#DDD8CC; --teal:#2F6F5E; --teal-ink:#1F4F42; --copper:#C97A3D; --danger:#B4472F;
+    --bg:#0B120F; --surface:#121B17; --ink:#EDF2EF; --sub:#8FA39C;
+    --line:#233029; --teal:#2FBE83; --teal-ink:#1F4F42; --copper:#E08A3C; --danger:#E0604A;
+    --blue:#3B82F6; --purple:#9B6BF0; --cyan:#1FBFB0;
     --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
   }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){ --bg:#161C1B; --surface:#1F2624; --ink:#EDECE6; --sub:#9BA8A4; --line:#33403C; }
+  :root[data-theme="light"]{
+    --bg:#F1F0EC; --surface:#FFFFFF; --ink:#1E2A28; --sub:#5B6B67; --line:#DDD8CC;
+    --teal:#2F6F5E; --teal-ink:#1F4F42; --copper:#C97A3D; --danger:#B4472F;
   }
-  :root[data-theme="dark"]{ --bg:#161C1B; --surface:#1F2624; --ink:#EDECE6; --sub:#9BA8A4; --line:#33403C; }
   *{box-sizing:border-box;}
   html{ scroll-padding-top:env(safe-area-inset-top,0px); }
   body{ margin:0; font-family:var(--sans); background:var(--bg); color:var(--ink);
@@ -31,10 +32,10 @@
   .stat:last-child{ border-right:none; }
   .stat .n{ font-family:var(--mono); font-size:18px; font-weight:600; display:block; }
   .stat .l{ font-size:11.5px; color:var(--sub); }
-  nav{ display:flex; overflow-x:auto; gap:2px; padding:10px 20px; background:var(--bg); position:sticky; top:env(safe-area-inset-top,0px); z-index:5; }
-  nav button{ font-family:var(--sans); font-size:13.5px; padding:8px 14px; border:1px solid var(--line);
+  #tabs{ display:flex; overflow-x:auto; gap:2px; padding:10px 20px; background:var(--bg); position:sticky; top:env(safe-area-inset-top,0px); z-index:5; }
+  #tabs button{ font-family:var(--sans); font-size:13.5px; padding:8px 14px; border:1px solid var(--line);
     background:var(--surface); color:var(--ink); border-radius:7px; cursor:pointer; white-space:nowrap; }
-  nav button.active{ background:var(--teal); border-color:var(--teal); color:#fff; }
+  #tabs button.active{ background:var(--teal); border-color:var(--teal); color:#fff; }
   main{ padding:6px 20px 40px; max-width:760px; margin:0 auto; }
   .panel{ display:none; }
   .panel.active{ display:block; }
@@ -75,6 +76,73 @@
   .chartbox canvas{ max-height:220px; }
   .toprow{ display:flex; justify-content:space-between; align-items:center; }
   .refresh{ background:transparent; border:1px solid var(--line); border-radius:7px; padding:6px 12px; font-family:var(--sans); font-size:12.5px; color:var(--ink); cursor:pointer; }
+
+  /* ---- dashboard chrome ---- */
+  .logo-badge{ background:var(--teal); color:#06231A; font-weight:700; font-size:13px; letter-spacing:0.02em;
+    padding:8px 10px; border-radius:8px; display:inline-block; }
+  .brand-row{ display:flex; align-items:center; gap:12px; }
+  .pill-btn{ display:flex; align-items:center; gap:6px; background:transparent; border:1px solid var(--line);
+    color:var(--ink); border-radius:20px; padding:8px 14px; font-family:var(--sans); font-size:13px; cursor:pointer; }
+  .pill-btn svg{ width:15px; height:15px; }
+  .stat{ display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;
+    border:1px solid var(--line); border-right:none; background:var(--surface); border-radius:0; }
+  .stat:first-child{ border-radius:12px 0 0 12px; }
+  .stat:last-child{ border-right:1px solid var(--line); border-radius:0 12px 12px 0; }
+  .stats{ border:none; border-radius:12px; overflow:hidden; margin-top:16px; }
+  .stat-icon{ width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .stat-icon svg{ width:17px; height:17px; }
+  .stat-body{ flex:1; min-width:0; }
+  .chev{ color:var(--sub); font-size:16px; flex-shrink:0; }
+  .navgrid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0; }
+  .navcard{ grid-column:span 1; border-radius:14px; padding:16px; color:#fff; cursor:pointer; border:none;
+    display:flex; align-items:center; gap:12px; text-align:left; font-family:var(--sans); }
+  .navcard.wide{ grid-column:span 2; }
+  .navcard .navicon{ width:42px; height:42px; border-radius:10px; background:rgba(255,255,255,.22);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .navcard .navicon svg{ width:21px; height:21px; }
+  .navcard .navtext{ flex:1; min-width:0; }
+  .navcard .navtitle{ font-size:15.5px; font-weight:600; display:block; }
+  .navcard .navsub{ font-size:12px; opacity:.85; display:block; }
+  .navcard .chev{ color:rgba(255,255,255,.8); }
+  .navcard.g-dealers{ background:linear-gradient(135deg,#1FA06B,#0F6B45); }
+  .navcard.g-selling{ background:linear-gradient(135deg,#4E8FF7,#2158C9); }
+  .navcard.g-purchasing{ background:linear-gradient(135deg,#F0A153,#C9701F); }
+  .navcard.g-payments{ background:linear-gradient(135deg,#B08AF5,#7B4FDE); }
+  .navcard.g-analytics{ background:linear-gradient(135deg,#2AD1BE,#0E8F82); }
+  .empty-illo{ width:52px; height:52px; margin:0 auto 8px; color:var(--sub); opacity:.6; }
+  .empty-illo svg{ width:100%; height:100%; }
+  .tabbar{ position:fixed; left:0; right:0; bottom:0; display:flex; background:var(--surface);
+    border-top:1px solid var(--line); padding:8px 4px calc(8px + env(safe-area-inset-bottom,0px)); z-index:10; }
+  .tabbar button{ flex:1; background:transparent; border:none; display:flex; flex-direction:column; align-items:center;
+    gap:3px; color:var(--sub); font-family:var(--sans); font-size:11px; cursor:pointer; padding:4px 0; }
+  .tabbar button svg{ width:20px; height:20px; }
+  .tabbar button.active{ color:var(--teal); }
+  main{ padding-bottom:90px; }
+  .home-title{ font-size:15px; font-weight:600; margin:18px 0 2px; }
+
+  /* ---- motion ---- */
+  @media (prefers-reduced-motion: no-preference){
+    .panel.active{ animation: panelIn .32s cubic-bezier(.22,.9,.35,1); }
+    @keyframes panelIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+    #loginScreen form{ animation: popIn .32s cubic-bezier(.22,.9,.35,1); }
+    @keyframes popIn{ from{opacity:0; transform:scale(.96) translateY(6px);} to{opacity:1; transform:scale(1) translateY(0);} }
+    .navgrid .navcard{ animation: cardIn .4s cubic-bezier(.22,.9,.35,1) backwards; }
+    .navgrid .navcard:nth-child(1){ animation-delay:.03s; } .navgrid .navcard:nth-child(2){ animation-delay:.08s; }
+    .navgrid .navcard:nth-child(3){ animation-delay:.13s; } .navgrid .navcard:nth-child(4){ animation-delay:.18s; }
+    .navgrid .navcard:nth-child(5){ animation-delay:.23s; }
+    @keyframes cardIn{ from{opacity:0; transform:translateY(12px) scale(.98);} to{opacity:1; transform:translateY(0) scale(1);} }
+    .navcard, .stat, .btn, .pill-btn, .refresh, .tabbar button, .install-bar button{
+      transition: transform .15s ease, box-shadow .2s ease, background .2s ease, color .2s ease, opacity .2s ease;
+    }
+    .navcard:active, .stat:active, .btn:active, .pill-btn:active{ transform:scale(.97); }
+    @media (hover:hover){
+      .navcard:hover{ transform:translateY(-3px); box-shadow:0 10px 24px rgba(0,0,0,.25); }
+      .stat:hover{ background:color-mix(in srgb, var(--surface) 85%, var(--ink) 5%); }
+    }
+    .tabbar button svg{ transition: transform .2s ease; }
+    .tabbar button.active svg{ transform:translateY(-2px); }
+    .chev{ transition: transform .2s ease; }
+  }
 </style>
 </head>
 <body>
@@ -94,36 +162,74 @@
 
 <header>
   <div class="toprow">
-    <div>
-      <h1>SAP Cash Flow</h1>
-      <p class="tagline">Dealers · Sales · Purchases · Payments</p>
+    <div class="brand-row" id="brandHome" style="cursor:pointer;">
+      <span class="logo-badge">SAP</span>
+      <div>
+        <h1>Cash Flow</h1>
+        <p class="tagline">Dealers · Sales · Purchases · Payments · Analytics</p>
+      </div>
     </div>
     <div class="header-actions">
-      <button class="refresh" id="installBtn" style="display:none;">Install app</button>
-      <button class="refresh" id="logoutBtn">Log out</button>
+      <button class="pill-btn" id="installBtn" style="display:none;">Install app</button>
+      <button class="pill-btn" id="logoutBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log out
+      </button>
     </div>
   </div>
   <div class="stats">
-    <div class="stat"><span class="n" id="statSales">—</span><span class="l">Sales total</span></div>
-    <div class="stat"><span class="n" id="statPurchases">—</span><span class="l">Purchases total</span></div>
-    <div class="stat"><span class="n" id="statPending">—</span><span class="l">Pending cheques</span></div>
+    <div class="stat" data-tab="sales"><div class="stat-icon" style="background:rgba(47,190,131,.18);color:var(--teal);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9 10a2 2 0 0 1 2-2h1.5a1.5 1.5 0 0 1 0 3H11a1.5 1.5 0 0 0 0 3H13a2 2 0 0 0 2-2"/></svg>
+    </div><div class="stat-body"><span class="n" id="statSales">—</span><span class="l">Sales total</span></div><span class="chev">›</span></div>
+    <div class="stat" data-tab="purchases"><div class="stat-icon" style="background:rgba(224,138,60,.18);color:var(--copper);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+    </div><div class="stat-body"><span class="n" id="statPurchases">—</span><span class="l">Purchases total</span></div><span class="chev">›</span></div>
+    <div class="stat" data-tab="payments"><div class="stat-icon" style="background:rgba(155,107,240,.18);color:var(--purple);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h16M7 15h2M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg>
+    </div><div class="stat-body"><span class="n" id="statPending">—</span><span class="l">Pending cheques</span></div><span class="chev">›</span></div>
   </div>
 </header>
 
-<nav id="tabs">
-  <button data-tab="dealers" class="active">Dealers</button>
-  <button data-tab="sales">Selling</button>
-  <button data-tab="purchases">Purchasing</button>
-  <button data-tab="payments">Payments</button>
-  <button data-tab="analytics">Analytics</button>
-</nav>
-
 <main>
 
-  <section class="panel active" id="panel-dealers">
+  <section class="panel active" id="panel-home">
+    <div class="navgrid">
+      <button class="navcard g-dealers" data-tab="dealers">
+        <span class="navicon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <span class="navtext"><span class="navtitle">Dealers</span><span class="navsub">Manage dealers &amp; customers</span></span>
+        <span class="chev">›</span>
+      </button>
+      <button class="navcard g-selling" data-tab="sales">
+        <span class="navicon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
+        <span class="navtext"><span class="navtitle">Selling</span><span class="navsub">Sales orders &amp; invoices</span></span>
+        <span class="chev">›</span>
+      </button>
+      <button class="navcard g-purchasing" data-tab="purchases">
+        <span class="navicon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
+        <span class="navtext"><span class="navtitle">Purchasing</span><span class="navsub">Purchase orders &amp; stock</span></span>
+        <span class="chev">›</span>
+      </button>
+      <button class="navcard g-payments" data-tab="payments">
+        <span class="navicon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+        <span class="navtext"><span class="navtitle">Payments</span><span class="navsub">Payments &amp; receipts</span></span>
+        <span class="chev">›</span>
+      </button>
+      <button class="navcard wide g-analytics" data-tab="analytics">
+        <span class="navicon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+        <span class="navtext"><span class="navtitle">Analytics</span><span class="navsub">Reports &amp; insights</span></span>
+        <span class="chev">›</span>
+      </button>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-dealers">
+    <div class="toprow" style="margin-bottom:12px;">
+      <div class="brand-row" style="cursor:pointer;" data-tab="home"><span class="chev" style="transform:rotate(180deg);display:inline-block;">›</span><span class="home-title" style="margin:0;">Find / Register Dealer</span></div>
+    </div>
     <form id="form-dealer">
+      <input type="hidden" name="id" id="dealerEditId">
       <div class="row">
-        <div class="field"><label>Name</label><input required name="name"></div>
+        <div class="field"><label>Name</label><input required name="name" id="dealerNameInput"></div>
         <div class="field"><label>Phone</label><input name="phone"></div>
       </div>
       <div class="row">
@@ -132,15 +238,19 @@
         </div>
         <div class="field"><label>Address</label><input name="address"></div>
       </div>
-      <button class="btn" type="submit">Register dealer</button>
+      <button class="btn" type="submit" id="dealerSubmitBtn">Register dealer</button>
+      <button class="btn ghost" type="button" id="dealerCancelBtn" style="display:none;margin-left:8px;">Cancel</button>
     </form>
-    <div class="tablewrap"><table><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Phone</th><th>Registered</th></tr></thead><tbody id="list-dealers"></tbody></table></div>
+    <div class="tablewrap"><table><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Phone</th><th>Registered</th><th></th></tr></thead><tbody id="list-dealers"></tbody></table></div>
   </section>
 
   <section class="panel" id="panel-sales">
+    <div class="toprow" style="margin-bottom:12px;">
+      <div class="brand-row" style="cursor:pointer;" data-tab="home"><span class="chev" style="transform:rotate(180deg);display:inline-block;">›</span><span class="home-title" style="margin:0;">Selling</span></div>
+    </div>
     <form id="form-sale">
       <div class="row">
-        <div class="field"><label>Dealer / Customer</label><input name="dealerName" placeholder="Walk-in"></div>
+        <div class="field"><label>Dealer / Customer</label><input name="dealerName" list="dealerNamesList" placeholder="Walk-in"></div>
         <div class="field"><label>Date</label><input type="date" name="date"></div>
       </div>
       <div class="row">
@@ -157,9 +267,12 @@
   </section>
 
   <section class="panel" id="panel-purchases">
+    <div class="toprow" style="margin-bottom:12px;">
+      <div class="brand-row" style="cursor:pointer;" data-tab="home"><span class="chev" style="transform:rotate(180deg);display:inline-block;">›</span><span class="home-title" style="margin:0;">Purchasing</span></div>
+    </div>
     <form id="form-purchase">
       <div class="row">
-        <div class="field"><label>Supplier</label><input required name="dealerName"></div>
+        <div class="field"><label>Supplier</label><input required name="dealerName" list="dealerNamesList"></div>
         <div class="field"><label>Date</label><input type="date" name="date"></div>
       </div>
       <div class="row">
@@ -176,10 +289,13 @@
   </section>
 
   <section class="panel" id="panel-payments">
+    <div class="toprow" style="margin-bottom:12px;">
+      <div class="brand-row" style="cursor:pointer;" data-tab="home"><span class="chev" style="transform:rotate(180deg);display:inline-block;">›</span><span class="home-title" style="margin:0;">Payments</span></div>
+    </div>
     <form id="form-payment">
       <div class="row">
         <div class="field"><label>Link to purchase (optional)</label><select name="purchaseId"><option value="">— none —</option></select></div>
-        <div class="field"><label>Dealer</label><input required name="dealerName"></div>
+        <div class="field"><label>Dealer</label><input required name="dealerName" list="dealerNamesList"></div>
       </div>
       <div class="row">
         <div class="field"><label>Method</label>
@@ -233,7 +349,39 @@
     </div>
   </section>
 
+  <datalist id="dealerNamesList"></datalist>
+
+  <section class="panel" id="panel-settings">
+    <div class="cards">
+      <div class="card" style="flex:1 1 100%;">
+        <span class="l" style="display:block;margin-bottom:6px;">Account</span>
+        <span class="n" style="font-size:14px;" id="settingsUser">—</span>
+      </div>
+    </div>
+    <button class="btn" id="settingsLogout" style="width:100%;margin-bottom:14px;">Log out</button>
+    <small class="hint">The Apps Script URL and login accounts are set directly in this page's code (near the top of the &lt;script&gt; section) — there's no in-app settings screen for those by design.</small>
+  </section>
+
 </main>
+
+<nav class="tabbar" id="tabbar">
+  <button data-tab="home" class="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </button>
+  <button data-tab="dealers">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Dealers
+  </button>
+  <button data-tab="analytics">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Analytics
+  </button>
+  <button data-tab="settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
+  </button>
+</nav>
 
 </div><!-- /#app -->
 
@@ -256,19 +404,38 @@
   let cache = { dealers:[], sales:[], purchases:[], payments:[] };
   let charts = {};
 
-  // tabs
-  $$('#tabs button').forEach(b=>b.addEventListener('click',()=>{
-    $$('#tabs button').forEach(x=>x.classList.remove('active'));
+  // navigation: stat cards, nav cards, tab bar, and back links all share data-tab
+  function goTo(tab){
     $$('.panel').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');
-    $('#panel-'+b.dataset.tab).classList.add('active');
-  }));
+    const p = $('#panel-'+tab);
+    if(p) p.classList.add('active');
+    $$('.tabbar button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+    window.scrollTo({top:0});
+  }
+  $$('[data-tab]').forEach(el=>el.addEventListener('click', ()=> goTo(el.dataset.tab)));
+  $('#brandHome').addEventListener('click', ()=> goTo('home'));
 
   $('#paymentMethod').addEventListener('change', e=>{
     $('#chequeFields').style.display = e.target.value==='Cheque' ? 'flex' : 'none';
   });
 
   function money(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function animateNumber(el, to){
+    if(!el) return;
+    to = Number(to)||0;
+    if(reduceMotion){ el.textContent = money(to); return; }
+    const from = Number((el.textContent||'0').replace(/,/g,'')) || 0;
+    const dur = 500, start = performance.now();
+    function tick(now){
+      const p = Math.min(1, (now-start)/dur);
+      const eased = 1 - Math.pow(1-p, 3);
+      el.textContent = money(from + (to-from)*eased);
+      if(p<1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
 
   async function api(action, method, body){
     if(!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_') === 0){
@@ -298,16 +465,17 @@
     const salesTotal = cache.sales.reduce((s,r)=>s+Number(r.Amount||0),0);
     const purchTotal = cache.purchases.reduce((s,r)=>s+Number(r.Amount||0),0);
     const pending = cache.payments.filter(p=>p.Method==='Cheque' && p.Status==='Pending').reduce((s,r)=>s+Number(r.Amount||0),0);
-    $('#statSales').textContent = money(salesTotal);
-    $('#statPurchases').textContent = money(purchTotal);
-    $('#statPending').textContent = money(pending);
+    animateNumber($('#statSales'), salesTotal);
+    animateNumber($('#statPurchases'), purchTotal);
+    animateNumber($('#statPending'), pending);
   }
 
   function renderDealers(){
     const tb = $('#list-dealers'); tb.innerHTML='';
-    if(!cache.dealers.length){ tb.innerHTML = '<tr><td colspan=5 class="empty">No dealers yet</td></tr>'; return; }
+    const dl = $('#dealerNamesList'); if(dl) dl.innerHTML = cache.dealers.map(d=>`<option value="${d.Name}">`).join('');
+    if(!cache.dealers.length){ tb.innerHTML = '<tr><td colspan=6 class="empty">No dealers yet</td></tr>'; return; }
     cache.dealers.slice().reverse().forEach(d=>{
-      tb.insertAdjacentHTML('beforeend', `<tr><td>${d.ID}</td><td>${d.Name}</td><td>${d.Type}</td><td>${d.Phone||''}</td><td>${d.RegisteredDate||''}</td></tr>`);
+      tb.insertAdjacentHTML('beforeend', `<tr><td>${d.ID}</td><td>${d.Name}</td><td>${d.Type}</td><td>${d.Phone||''}</td><td>${d.RegisteredDate||''}</td><td><button type="button" class="refresh" data-edit-dealer="${d.ID}">Edit</button></td></tr>`);
     });
   }
 
@@ -344,19 +512,68 @@
     return o;
   }
 
+  // find an existing dealer by name (case-insensitive), or create one on the fly
+  async function resolveDealer(name, defaultType){
+    if(!name || !name.trim()) return { id:'', name:'' };
+    const match = cache.dealers.find(d => (d.Name||'').trim().toLowerCase() === name.trim().toLowerCase());
+    if(match) return { id: match.ID, name: match.Name };
+    const res = await api('addDealer','POST', { name: name.trim(), type: defaultType });
+    cache.dealers.push({ ID: res.id, Name: name.trim(), Type: defaultType, Phone:'', RegisteredDate:'' });
+    return { id: res.id, name: name.trim() };
+  }
+
+  function resetDealerForm(){
+    $('#form-dealer').reset();
+    $('#dealerEditId').value = '';
+    $('#dealerSubmitBtn').textContent = 'Register dealer';
+    $('#dealerCancelBtn').style.display = 'none';
+  }
+
   $('#form-dealer').addEventListener('submit', async e=>{
     e.preventDefault();
-    await api('addDealer','POST', formToBody(e.target));
-    e.target.reset(); loadAll();
+    const body = formToBody(e.target);
+    if(body.id){
+      await api('updateDealer','POST', body);
+    } else {
+      delete body.id;
+      await api('addDealer','POST', body);
+    }
+    resetDealerForm(); loadAll();
   });
+  $('#dealerCancelBtn').addEventListener('click', resetDealerForm);
+  $('#list-dealers').addEventListener('click', e=>{
+    const btn = e.target.closest('[data-edit-dealer]');
+    if(!btn) return;
+    const d = cache.dealers.find(x=>x.ID===btn.dataset.editDealer);
+    if(!d) return;
+    const f = $('#form-dealer');
+    f.elements['id'].value = d.ID;
+    f.elements['name'].value = d.Name||'';
+    f.elements['phone'].value = d.Phone||'';
+    f.elements['address'].value = d.Address||'';
+    f.elements['type'].value = d.Type||'Supplier';
+    $('#dealerSubmitBtn').textContent = 'Save changes';
+    $('#dealerCancelBtn').style.display = 'inline-block';
+    goTo('dealers');
+    $('#dealerNameInput').focus();
+  });
+
   $('#form-sale').addEventListener('submit', async e=>{
     e.preventDefault();
-    await api('addSale','POST', formToBody(e.target));
+    const body = formToBody(e.target);
+    if(body.dealerName && body.dealerName !== 'Walk-in'){
+      const d = await resolveDealer(body.dealerName, 'Customer');
+      body.dealerId = d.id; body.dealerName = d.name || body.dealerName;
+    }
+    await api('addSale','POST', body);
     e.target.reset(); loadAll();
   });
   $('#form-purchase').addEventListener('submit', async e=>{
     e.preventDefault();
-    await api('addPurchase','POST', formToBody(e.target));
+    const body = formToBody(e.target);
+    const d = await resolveDealer(body.dealerName, 'Supplier');
+    body.dealerId = d.id; body.dealerName = d.name || body.dealerName;
+    await api('addPurchase','POST', body);
     e.target.reset(); loadAll();
   });
   $('#form-payment').addEventListener('submit', async e=>{
@@ -381,8 +598,8 @@
     if(typeof Chart === 'undefined') return;
     const salesTotal = cache.sales.reduce((s,r)=>s+Number(r.Amount||0),0);
     const purchTotal = cache.purchases.reduce((s,r)=>s+Number(r.Amount||0),0);
-    $('#anNet').textContent = money(salesTotal - purchTotal);
-    $('#anAvgSale').textContent = cache.sales.length ? money(salesTotal/cache.sales.length) : '0.00';
+    animateNumber($('#anNet'), salesTotal - purchTotal);
+    animateNumber($('#anAvgSale'), cache.sales.length ? salesTotal/cache.sales.length : 0);
 
     const bySupplier = {};
     cache.purchases.forEach(p=>{ bySupplier[p.DealerName||'—'] = (bySupplier[p.DealerName||'—']||0) + Number(p.Amount||0); });
@@ -436,6 +653,8 @@
   function showApp(){
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+    const u = localStorage.getItem(AUTH_KEY);
+    if($('#settingsUser')) $('#settingsUser').textContent = u || '—';
     loadAll();
   }
   function showLogin(){
@@ -455,10 +674,12 @@
       $('#loginError').textContent = 'Incorrect username or password.';
     }
   });
-  $('#logoutBtn').addEventListener('click', ()=>{
+  function doLogout(){
     localStorage.removeItem(AUTH_KEY);
     showLogin();
-  });
+  }
+  $('#logoutBtn').addEventListener('click', doLogout);
+  $('#settingsLogout').addEventListener('click', doLogout);
   if(localStorage.getItem(AUTH_KEY) && USERS[localStorage.getItem(AUTH_KEY)]){
     showApp();
   } else {
