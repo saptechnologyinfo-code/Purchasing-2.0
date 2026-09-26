@@ -243,7 +243,7 @@
   const $$ = s => document.querySelectorAll(s);
 
   // ---- Paste your deployed Apps Script Web App URL below (ends in /exec) ----
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZYlP9XxgwYJU7x1vb28127ypSzUvEgYezm5J9tSymRQ1rDjquprN9v8F9nUl8RkXgjg/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwnMq89VSIkvZ8EHDEVZdw2TscGYINn8nsULyyn2e6E_UFt3Y1I6oyqrWKxcmecxo3vnA/exec";
 
   // ---- Login accounts: add/change usernames and passwords here ----
   // NOTE: this only gates casual access on a shared device — the passwords live in
@@ -279,8 +279,10 @@
       const res = await fetch(SCRIPT_URL + '?action=' + action);
       return res.json();
     }
-    const res = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(body) });
-    return res.json();
+    const res = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({action:action}, body)) });
+    const data = await res.json();
+    if(!data.ok){ alert('Save failed: ' + (data.error || 'unknown error')); throw new Error(data.error || 'unknown error'); }
+    return data;
   }
 
   async function loadAll(){
