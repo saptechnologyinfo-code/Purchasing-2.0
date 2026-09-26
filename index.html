@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SAP Cash Flow</title>
+<title>Business Manager</title>
 <link rel="icon" href="icon.svg">
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --bg:#0B120F; --surface:#121B17; --ink:#EDF2EF; --sub:#8FA39C;
@@ -19,6 +20,14 @@
   :root[data-theme="light"]{
     --bg:#F1F0EC; --surface:#FFFFFF; --ink:#1E2A28; --sub:#5B6B67; --line:#DDD8CC;
     --teal:#2F6F5E; --teal-ink:#1F4F42; --copper:#C97A3D; --danger:#B4472F;
+  }
+  :root[data-theme="darkblue"]{
+    --bg:#0A1228; --surface:#101B3D; --ink:#EAF0FF; --sub:#8CA0D6;
+    --line:#1F2C5C; --teal:#3B82F6; --teal-ink:#1E3FA0; --copper:#E0A23C; --danger:#F0605A;
+  }
+  :root[data-theme="black"]{
+    --bg:#000000; --surface:#0D0D0D; --ink:#F5F5F5; --sub:#9A9A9A;
+    --line:#232323; --teal:#2FBE83; --teal-ink:#1F4F42; --copper:#E08A3C; --danger:#E0604A;
   }
   *{box-sizing:border-box;}
   html{ scroll-padding-top:env(safe-area-inset-top,0px); }
@@ -109,6 +118,8 @@
   .navcard.g-purchasing{ background:linear-gradient(135deg,#F0A153,#C9701F); }
   .navcard.g-payments{ background:linear-gradient(135deg,#B08AF5,#7B4FDE); }
   .navcard.g-analytics{ background:linear-gradient(135deg,#2AD1BE,#0E8F82); }
+  .navcard.g-reports{ background:linear-gradient(135deg,#6B7280,#374151); }
+  .del-btn{ color:var(--danger); border-color:var(--danger); }
   .empty-illo{ width:52px; height:52px; margin:0 auto 8px; color:var(--sub); opacity:.6; }
   .empty-illo svg{ width:100%; height:100%; }
   .tabbar{ position:fixed; left:0; right:0; bottom:0; display:flex; background:var(--surface);
@@ -149,7 +160,7 @@
 
 <div id="loginScreen">
   <form id="form-login">
-    <h2>SAP Cash Flow</h2>
+    <h2>Business Manager</h2>
     <p class="tagline">Sign in to continue</p>
     <div class="field"><label>Username</label><input required id="loginUser" autocomplete="username"></div>
     <div class="field"><label>Password</label><input required id="loginPass" type="password" autocomplete="current-password"></div>
@@ -163,10 +174,10 @@
 <header>
   <div class="toprow">
     <div class="brand-row" id="brandHome" style="cursor:pointer;">
-      <span class="logo-badge">SAP</span>
+      <span class="logo-badge">BM</span>
       <div>
-        <h1>Cash Flow</h1>
-        <p class="tagline">Dealers · Sales · Purchases · Payments · Analytics</p>
+        <h1>Business Manager</h1>
+        <p class="tagline">Dealers · Sales · Purchases · Payments · Reports</p>
       </div>
     </div>
     <div class="header-actions">
@@ -214,9 +225,14 @@
         <span class="navtext"><span class="navtitle">Payments</span><span class="navsub">Payments &amp; receipts</span></span>
         <span class="chev">›</span>
       </button>
-      <button class="navcard wide g-analytics" data-tab="analytics">
+      <button class="navcard g-analytics" data-tab="analytics">
         <span class="navicon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
-        <span class="navtext"><span class="navtitle">Analytics</span><span class="navsub">Reports &amp; insights</span></span>
+        <span class="navtext"><span class="navtitle">Analytics</span><span class="navsub">Charts &amp; insights</span></span>
+        <span class="chev">›</span>
+      </button>
+      <button class="navcard g-reports" data-tab="reports">
+        <span class="navicon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>
+        <span class="navtext"><span class="navtitle">Reports</span><span class="navsub">Generate &amp; export PDF</span></span>
         <span class="chev">›</span>
       </button>
     </div>
@@ -241,7 +257,7 @@
       <button class="btn" type="submit" id="dealerSubmitBtn">Register dealer</button>
       <button class="btn ghost" type="button" id="dealerCancelBtn" style="display:none;margin-left:8px;">Cancel</button>
     </form>
-    <div class="tablewrap"><table><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Phone</th><th>Registered</th><th></th></tr></thead><tbody id="list-dealers"></tbody></table></div>
+    <div class="tablewrap"><table><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Phone</th><th>Registered</th><th>Actions</th></tr></thead><tbody id="list-dealers"></tbody></table></div>
   </section>
 
   <section class="panel" id="panel-sales">
@@ -249,6 +265,7 @@
       <div class="brand-row" style="cursor:pointer;" data-tab="home"><span class="chev" style="transform:rotate(180deg);display:inline-block;">›</span><span class="home-title" style="margin:0;">Selling</span></div>
     </div>
     <form id="form-sale">
+      <input type="hidden" name="id" id="saleEditId">
       <div class="row">
         <div class="field"><label>Dealer / Customer</label><input name="dealerName" list="dealerNamesList" placeholder="Walk-in"></div>
         <div class="field"><label>Date</label><input type="date" name="date"></div>
@@ -261,9 +278,10 @@
         <div class="field"><label>Status</label><select name="status"><option>Paid</option><option>Unpaid</option></select></div>
         <div class="field"><label>Notes</label><input name="notes"></div>
       </div>
-      <button class="btn" type="submit">Record sale</button>
+      <button class="btn" type="submit" id="saleSubmitBtn">Record sale</button>
+      <button class="btn ghost" type="button" id="saleCancelBtn" style="display:none;margin-left:8px;">Cancel</button>
     </form>
-    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Dealer</th><th>Item</th><th>Amount</th><th>Status</th></tr></thead><tbody id="list-sales"></tbody></table></div>
+    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Dealer</th><th>Item</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody id="list-sales"></tbody></table></div>
   </section>
 
   <section class="panel" id="panel-purchases">
@@ -271,6 +289,7 @@
       <div class="brand-row" style="cursor:pointer;" data-tab="home"><span class="chev" style="transform:rotate(180deg);display:inline-block;">›</span><span class="home-title" style="margin:0;">Purchasing</span></div>
     </div>
     <form id="form-purchase">
+      <input type="hidden" name="id" id="purchaseEditId">
       <div class="row">
         <div class="field"><label>Supplier</label><input required name="dealerName" list="dealerNamesList"></div>
         <div class="field"><label>Date</label><input type="date" name="date"></div>
@@ -283,9 +302,10 @@
         <div class="field"><label>Status</label><select name="status"><option>Unpaid</option><option>Paid</option></select></div>
         <div class="field"><label>Notes</label><input name="notes"></div>
       </div>
-      <button class="btn" type="submit">Record purchase</button>
+      <button class="btn" type="submit" id="purchaseSubmitBtn">Record purchase</button>
+      <button class="btn ghost" type="button" id="purchaseCancelBtn" style="display:none;margin-left:8px;">Cancel</button>
     </form>
-    <div class="tablewrap"><table><thead><tr><th>ID</th><th>Date</th><th>Supplier</th><th>Item</th><th>Amount</th><th>Status</th></tr></thead><tbody id="list-purchases"></tbody></table></div>
+    <div class="tablewrap"><table><thead><tr><th>ID</th><th>Date</th><th>Supplier</th><th>Item</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody id="list-purchases"></tbody></table></div>
   </section>
 
   <section class="panel" id="panel-payments">
@@ -293,6 +313,7 @@
       <div class="brand-row" style="cursor:pointer;" data-tab="home"><span class="chev" style="transform:rotate(180deg);display:inline-block;">›</span><span class="home-title" style="margin:0;">Payments</span></div>
     </div>
     <form id="form-payment">
+      <input type="hidden" name="id" id="paymentEditId">
       <div class="row">
         <div class="field"><label>Link to purchase (optional)</label><select name="purchaseId"><option value="">— none —</option></select></div>
         <div class="field"><label>Dealer</label><input required name="dealerName" list="dealerNamesList"></div>
@@ -314,9 +335,10 @@
       <label style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
         <input type="checkbox" name="markPaid" style="width:auto;"> Mark linked purchase as paid
       </label>
-      <button class="btn" type="submit">Record payment</button>
+      <button class="btn" type="submit" id="paymentSubmitBtn">Record payment</button>
+      <button class="btn ghost" type="button" id="paymentCancelBtn" style="display:none;margin-left:8px;">Cancel</button>
     </form>
-    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Dealer</th><th>Method</th><th>Cheque</th><th>Amount</th><th>Status</th></tr></thead><tbody id="list-payments"></tbody></table></div>
+    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Dealer</th><th>Method</th><th>Cheque</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody id="list-payments"></tbody></table></div>
   </section>
 
   <section class="panel" id="panel-analytics">
@@ -358,8 +380,53 @@
         <span class="n" style="font-size:14px;" id="settingsUser">—</span>
       </div>
     </div>
+    <form style="margin-bottom:14px;">
+      <div class="field" style="margin-bottom:0;">
+        <label>Theme</label>
+        <select id="themeSelect">
+          <option value="dark">Dark Green (default)</option>
+          <option value="light">Light</option>
+          <option value="darkblue">Dark Blue</option>
+          <option value="black">Black</option>
+        </select>
+      </div>
+    </form>
     <button class="btn" id="settingsLogout" style="width:100%;margin-bottom:14px;">Log out</button>
     <small class="hint">The Apps Script URL and login accounts are set directly in this page's code (near the top of the &lt;script&gt; section) — there's no in-app settings screen for those by design.</small>
+  </section>
+
+  <section class="panel" id="panel-reports">
+    <div class="toprow" style="margin-bottom:12px;">
+      <div class="brand-row" style="cursor:pointer;" data-tab="home"><span class="chev" style="transform:rotate(180deg);display:inline-block;">›</span><span class="home-title" style="margin:0;">Reports</span></div>
+    </div>
+    <form id="form-report">
+      <div class="row">
+        <div class="field"><label>From date</label><input type="date" name="from" id="reportFrom"></div>
+        <div class="field"><label>To date</label><input type="date" name="to" id="reportTo"></div>
+      </div>
+      <div class="row">
+        <button class="btn" type="submit">Generate report</button>
+        <button class="btn ghost" type="button" id="reportPdfBtn" style="margin-left:8px;">Download as PDF</button>
+      </div>
+    </form>
+    <div class="cards">
+      <div class="card"><span class="n" id="repSales">—</span><span class="l">Sales total</span></div>
+      <div class="card"><span class="n" id="repPurchases">—</span><span class="l">Purchases total</span></div>
+      <div class="card"><span class="n" id="repNet">—</span><span class="l">Net cash flow</span></div>
+      <div class="card"><span class="n" id="repPayments">—</span><span class="l">Payments total</span></div>
+    </div>
+    <div class="chartbox">
+      <h3>Sales in range</h3>
+      <div class="tablewrap" style="border:none;"><table><thead><tr><th>Date</th><th>Dealer</th><th>Item</th><th>Amount</th></tr></thead><tbody id="rep-sales"></tbody></table></div>
+    </div>
+    <div class="chartbox">
+      <h3>Purchases in range</h3>
+      <div class="tablewrap" style="border:none;"><table><thead><tr><th>Date</th><th>Supplier</th><th>Item</th><th>Amount</th></tr></thead><tbody id="rep-purchases"></tbody></table></div>
+    </div>
+    <div class="chartbox">
+      <h3>Payments in range</h3>
+      <div class="tablewrap" style="border:none;"><table><thead><tr><th>Date</th><th>Dealer</th><th>Method</th><th>Amount</th></tr></thead><tbody id="rep-payments"></tbody></table></div>
+    </div>
   </section>
 
 </main>
@@ -400,9 +467,18 @@
     "admin": "changeme"
   };
   const AUTH_KEY = 'cashflow_auth';
+  const THEME_KEY = 'cashflow_theme';
 
   let cache = { dealers:[], sales:[], purchases:[], payments:[] };
   let charts = {};
+
+  // --- Theme ---
+  function applyTheme(t){
+    if(t && t !== 'dark'){ document.documentElement.setAttribute('data-theme', t); }
+    else { document.documentElement.removeAttribute('data-theme'); }
+  }
+  const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
+  applyTheme(savedTheme);
 
   // navigation: stat cards, nav cards, tab bar, and back links all share data-tab
   function goTo(tab){
@@ -470,20 +546,24 @@
     animateNumber($('#statPending'), pending);
   }
 
+  function actionBtns_(kind, id){
+    return `<button type="button" class="refresh" data-edit-${kind}="${id}">Edit</button> <button type="button" class="refresh del-btn" data-del-${kind}="${id}">Delete</button>`;
+  }
+
   function renderDealers(){
     const tb = $('#list-dealers'); tb.innerHTML='';
     const dl = $('#dealerNamesList'); if(dl) dl.innerHTML = cache.dealers.map(d=>`<option value="${d.Name}">`).join('');
     if(!cache.dealers.length){ tb.innerHTML = '<tr><td colspan=6 class="empty">No dealers yet</td></tr>'; return; }
     cache.dealers.slice().reverse().forEach(d=>{
-      tb.insertAdjacentHTML('beforeend', `<tr><td>${d.ID}</td><td>${d.Name}</td><td>${d.Type}</td><td>${d.Phone||''}</td><td>${d.RegisteredDate||''}</td><td><button type="button" class="refresh" data-edit-dealer="${d.ID}">Edit</button></td></tr>`);
+      tb.insertAdjacentHTML('beforeend', `<tr><td>${d.ID}</td><td>${d.Name}</td><td>${d.Type}</td><td>${d.Phone||''}</td><td>${d.RegisteredDate||''}</td><td style="white-space:nowrap;">${actionBtns_('dealer', d.ID)}</td></tr>`);
     });
   }
 
   function renderSales(){
     const tb = $('#list-sales'); tb.innerHTML='';
-    if(!cache.sales.length){ tb.innerHTML = '<tr><td colspan=5 class="empty">No sales yet</td></tr>'; return; }
+    if(!cache.sales.length){ tb.innerHTML = '<tr><td colspan=6 class="empty">No sales yet</td></tr>'; return; }
     cache.sales.slice().reverse().forEach(r=>{
-      tb.insertAdjacentHTML('beforeend', `<tr><td>${r.Date||''}</td><td>${r.DealerName||''}</td><td>${r.Item||''}</td><td class="amt">${money(r.Amount)}</td><td><span class="pill ${String(r.Status).toLowerCase()}">${r.Status}</span></td></tr>`);
+      tb.insertAdjacentHTML('beforeend', `<tr><td>${r.Date||''}</td><td>${r.DealerName||''}</td><td>${r.Item||''}</td><td class="amt">${money(r.Amount)}</td><td><span class="pill ${String(r.Status).toLowerCase()}">${r.Status}</span></td><td style="white-space:nowrap;">${actionBtns_('sale', r.ID)}</td></tr>`);
     });
   }
 
@@ -491,18 +571,18 @@
     const tb = $('#list-purchases'); tb.innerHTML='';
     const sel = $('select[name=purchaseId]');
     sel.innerHTML = '<option value="">— none —</option>';
-    if(!cache.purchases.length){ tb.innerHTML = '<tr><td colspan=6 class="empty">No purchases yet</td></tr>'; return; }
+    if(!cache.purchases.length){ tb.innerHTML = '<tr><td colspan=7 class="empty">No purchases yet</td></tr>'; return; }
     cache.purchases.slice().reverse().forEach(r=>{
-      tb.insertAdjacentHTML('beforeend', `<tr><td>${r.ID}</td><td>${r.Date||''}</td><td>${r.DealerName||''}</td><td>${r.Item||''}</td><td class="amt">${money(r.Amount)}</td><td><span class="pill ${String(r.Status).toLowerCase()}">${r.Status}</span></td></tr>`);
+      tb.insertAdjacentHTML('beforeend', `<tr><td>${r.ID}</td><td>${r.Date||''}</td><td>${r.DealerName||''}</td><td>${r.Item||''}</td><td class="amt">${money(r.Amount)}</td><td><span class="pill ${String(r.Status).toLowerCase()}">${r.Status}</span></td><td style="white-space:nowrap;">${actionBtns_('purchase', r.ID)}</td></tr>`);
       if(r.Status!=='Paid') sel.insertAdjacentHTML('beforeend', `<option value="${r.ID}">${r.ID} — ${r.DealerName} (${money(r.Amount)})</option>`);
     });
   }
 
   function renderPayments(){
     const tb = $('#list-payments'); tb.innerHTML='';
-    if(!cache.payments.length){ tb.innerHTML = '<tr><td colspan=6 class="empty">No payments yet</td></tr>'; return; }
+    if(!cache.payments.length){ tb.innerHTML = '<tr><td colspan=7 class="empty">No payments yet</td></tr>'; return; }
     cache.payments.slice().reverse().forEach(r=>{
-      tb.insertAdjacentHTML('beforeend', `<tr><td>${r.Date||''}</td><td>${r.DealerName||''}</td><td>${r.Method}</td><td>${r.ChequeNo||''}</td><td class="amt">${money(r.Amount)}</td><td><span class="pill ${String(r.Status).toLowerCase()}">${r.Status}</span></td></tr>`);
+      tb.insertAdjacentHTML('beforeend', `<tr><td>${r.Date||''}</td><td>${r.DealerName||''}</td><td>${r.Method}</td><td>${r.ChequeNo||''}</td><td class="amt">${money(r.Amount)}</td><td><span class="pill ${String(r.Status).toLowerCase()}">${r.Status}</span></td><td style="white-space:nowrap;">${actionBtns_('payment', r.ID)}</td></tr>`);
     });
   }
 
@@ -541,7 +621,15 @@
     resetDealerForm(); loadAll();
   });
   $('#dealerCancelBtn').addEventListener('click', resetDealerForm);
-  $('#list-dealers').addEventListener('click', e=>{
+  $('#list-dealers').addEventListener('click', async e=>{
+    const delBtn = e.target.closest('[data-del-dealer]');
+    if(delBtn){
+      if(confirm('Delete this dealer? This cannot be undone.')){
+        await api('deleteDealer','POST', { id: delBtn.dataset.delDealer });
+        resetDealerForm(); loadAll();
+      }
+      return;
+    }
     const btn = e.target.closest('[data-edit-dealer]');
     if(!btn) return;
     const d = cache.dealers.find(x=>x.ID===btn.dataset.editDealer);
@@ -558,6 +646,12 @@
     $('#dealerNameInput').focus();
   });
 
+  function resetSaleForm(){
+    $('#form-sale').reset();
+    $('#saleEditId').value = '';
+    $('#saleSubmitBtn').textContent = 'Record sale';
+    $('#saleCancelBtn').style.display = 'none';
+  }
   $('#form-sale').addEventListener('submit', async e=>{
     e.preventDefault();
     const body = formToBody(e.target);
@@ -565,17 +659,86 @@
       const d = await resolveDealer(body.dealerName, 'Customer');
       body.dealerId = d.id; body.dealerName = d.name || body.dealerName;
     }
-    await api('addSale','POST', body);
-    e.target.reset(); loadAll();
+    if(body.id){ await api('updateSale','POST', body); }
+    else { delete body.id; await api('addSale','POST', body); }
+    resetSaleForm(); loadAll();
   });
+  $('#saleCancelBtn').addEventListener('click', resetSaleForm);
+  $('#list-sales').addEventListener('click', async e=>{
+    const delBtn = e.target.closest('[data-del-sale]');
+    if(delBtn){
+      if(confirm('Delete this sale record?')){
+        await api('deleteSale','POST', { id: delBtn.dataset.delSale });
+        resetSaleForm(); loadAll();
+      }
+      return;
+    }
+    const btn = e.target.closest('[data-edit-sale]');
+    if(!btn) return;
+    const r = cache.sales.find(x=>x.ID===btn.dataset.editSale);
+    if(!r) return;
+    const f = $('#form-sale');
+    f.elements['id'].value = r.ID;
+    f.elements['dealerName'].value = r.DealerName||'';
+    f.elements['date'].value = r.Date||'';
+    f.elements['item'].value = r.Item||'';
+    f.elements['amount'].value = r.Amount||0;
+    f.elements['status'].value = r.Status||'Paid';
+    f.elements['notes'].value = r.Notes||'';
+    $('#saleSubmitBtn').textContent = 'Save changes';
+    $('#saleCancelBtn').style.display = 'inline-block';
+    window.scrollTo({top:0});
+  });
+
+  function resetPurchaseForm(){
+    $('#form-purchase').reset();
+    $('#purchaseEditId').value = '';
+    $('#purchaseSubmitBtn').textContent = 'Record purchase';
+    $('#purchaseCancelBtn').style.display = 'none';
+  }
   $('#form-purchase').addEventListener('submit', async e=>{
     e.preventDefault();
     const body = formToBody(e.target);
     const d = await resolveDealer(body.dealerName, 'Supplier');
     body.dealerId = d.id; body.dealerName = d.name || body.dealerName;
-    await api('addPurchase','POST', body);
-    e.target.reset(); loadAll();
+    if(body.id){ await api('updatePurchase','POST', body); }
+    else { delete body.id; await api('addPurchase','POST', body); }
+    resetPurchaseForm(); loadAll();
   });
+  $('#purchaseCancelBtn').addEventListener('click', resetPurchaseForm);
+  $('#list-purchases').addEventListener('click', async e=>{
+    const delBtn = e.target.closest('[data-del-purchase]');
+    if(delBtn){
+      if(confirm('Delete this purchase record?')){
+        await api('deletePurchase','POST', { id: delBtn.dataset.delPurchase });
+        resetPurchaseForm(); loadAll();
+      }
+      return;
+    }
+    const btn = e.target.closest('[data-edit-purchase]');
+    if(!btn) return;
+    const r = cache.purchases.find(x=>x.ID===btn.dataset.editPurchase);
+    if(!r) return;
+    const f = $('#form-purchase');
+    f.elements['id'].value = r.ID;
+    f.elements['dealerName'].value = r.DealerName||'';
+    f.elements['date'].value = r.Date||'';
+    f.elements['item'].value = r.Item||'';
+    f.elements['amount'].value = r.Amount||0;
+    f.elements['status'].value = r.Status||'Unpaid';
+    f.elements['notes'].value = r.Notes||'';
+    $('#purchaseSubmitBtn').textContent = 'Save changes';
+    $('#purchaseCancelBtn').style.display = 'inline-block';
+    window.scrollTo({top:0});
+  });
+
+  function resetPaymentForm(){
+    $('#form-payment').reset();
+    $('#paymentEditId').value = '';
+    $('#paymentSubmitBtn').textContent = 'Record payment';
+    $('#paymentCancelBtn').style.display = 'none';
+    $('#chequeFields').style.display = 'none';
+  }
   $('#form-payment').addEventListener('submit', async e=>{
     e.preventDefault();
     const body = formToBody(e.target);
@@ -583,8 +746,38 @@
       const p = cache.purchases.find(x=>x.ID===body.purchaseId);
       if(p) body.dealerName = body.dealerName || p.DealerName;
     }
-    await api('addPayment','POST', body);
-    e.target.reset(); $('#chequeFields').style.display='none'; loadAll();
+    if(body.id){ await api('updatePayment','POST', body); }
+    else { delete body.id; await api('addPayment','POST', body); }
+    resetPaymentForm(); loadAll();
+  });
+  $('#paymentCancelBtn').addEventListener('click', resetPaymentForm);
+  $('#list-payments').addEventListener('click', async e=>{
+    const delBtn = e.target.closest('[data-del-payment]');
+    if(delBtn){
+      if(confirm('Delete this payment record?')){
+        await api('deletePayment','POST', { id: delBtn.dataset.delPayment });
+        resetPaymentForm(); loadAll();
+      }
+      return;
+    }
+    const btn = e.target.closest('[data-edit-payment]');
+    if(!btn) return;
+    const r = cache.payments.find(x=>x.ID===btn.dataset.editPayment);
+    if(!r) return;
+    const f = $('#form-payment');
+    f.elements['id'].value = r.ID;
+    f.elements['purchaseId'].value = r.PurchaseID||'';
+    f.elements['dealerName'].value = r.DealerName||'';
+    f.elements['method'].value = r.Method||'Cash';
+    f.elements['amount'].value = r.Amount||0;
+    f.elements['chequeNo'].value = r.ChequeNo||'';
+    f.elements['chequeDate'].value = r.ChequeDate||'';
+    f.elements['date'].value = r.Date||'';
+    f.elements['notes'].value = r.Notes||'';
+    $('#chequeFields').style.display = r.Method==='Cheque' ? 'flex' : 'none';
+    $('#paymentSubmitBtn').textContent = 'Save changes';
+    $('#paymentCancelBtn').style.display = 'inline-block';
+    window.scrollTo({top:0});
   });
 
   $('#reloadData').addEventListener('click', loadAll);
@@ -647,6 +840,93 @@
     charts[id] = new Chart(ctx, { type, data, options: Object.assign({responsive:true, maintainAspectRatio:false}, options||{}) });
   }
 
+  // --- Reports ---
+  let lastReport = null;
+
+  function inRange_(dateStr, from, to){
+    if(!dateStr) return false;
+    if(from && dateStr < from) return false;
+    if(to && dateStr > to) return false;
+    return true;
+  }
+
+  function buildReport(){
+    const from = $('#reportFrom').value;
+    const to = $('#reportTo').value;
+    const sales = cache.sales.filter(r => inRange_(r.Date, from, to));
+    const purchases = cache.purchases.filter(r => inRange_(r.Date, from, to));
+    const payments = cache.payments.filter(r => inRange_(r.Date, from, to));
+    const salesTotal = sales.reduce((s,r)=>s+Number(r.Amount||0),0);
+    const purchTotal = purchases.reduce((s,r)=>s+Number(r.Amount||0),0);
+    const paymentsTotal = payments.reduce((s,r)=>s+Number(r.Amount||0),0);
+    lastReport = { from, to, sales, purchases, payments, salesTotal, purchTotal, paymentsTotal, net: salesTotal - purchTotal };
+    return lastReport;
+  }
+
+  function renderReport(){
+    const r = buildReport();
+    $('#repSales').textContent = money(r.salesTotal);
+    $('#repPurchases').textContent = money(r.purchTotal);
+    $('#repNet').textContent = money(r.net);
+    $('#repPayments').textContent = money(r.paymentsTotal);
+
+    const ts = $('#rep-sales'); ts.innerHTML = '';
+    ts.innerHTML = r.sales.length ? r.sales.map(x=>`<tr><td>${x.Date||''}</td><td>${x.DealerName||''}</td><td>${x.Item||''}</td><td class="amt">${money(x.Amount)}</td></tr>`).join('') : '<tr><td colspan=4 class="empty">No sales in range</td></tr>';
+
+    const tp = $('#rep-purchases');
+    tp.innerHTML = r.purchases.length ? r.purchases.map(x=>`<tr><td>${x.Date||''}</td><td>${x.DealerName||''}</td><td>${x.Item||''}</td><td class="amt">${money(x.Amount)}</td></tr>`).join('') : '<tr><td colspan=4 class="empty">No purchases in range</td></tr>';
+
+    const tpay = $('#rep-payments');
+    tpay.innerHTML = r.payments.length ? r.payments.map(x=>`<tr><td>${x.Date||''}</td><td>${x.DealerName||''}</td><td>${x.Method||''}</td><td class="amt">${money(x.Amount)}</td></tr>`).join('') : '<tr><td colspan=4 class="empty">No payments in range</td></tr>';
+  }
+
+  $('#form-report').addEventListener('submit', e=>{
+    e.preventDefault();
+    renderReport();
+  });
+
+  $('#reportPdfBtn').addEventListener('click', ()=>{
+    const r = lastReport || buildReport();
+    if(!window.jspdf || !window.jspdf.jsPDF){ alert('PDF library failed to load — check your internet connection.'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:'pt' });
+    const margin = 40; let y = margin;
+    const lineH = 16;
+    const pageH = doc.internal.pageSize.getHeight();
+    function line(text, size, bold){
+      doc.setFontSize(size||10);
+      doc.setFont(undefined, bold ? 'bold' : 'normal');
+      if(y > pageH - margin){ doc.addPage(); y = margin; }
+      doc.text(String(text), margin, y);
+      y += lineH;
+    }
+    line('Business Manager — Report', 16, true);
+    line(`Range: ${r.from || 'earliest'} to ${r.to || 'latest'}`, 10);
+    line(`Generated: ${new Date().toLocaleString()}`, 9);
+    y += 6;
+    line(`Sales total: ${money(r.salesTotal)}`, 11, true);
+    line(`Purchases total: ${money(r.purchTotal)}`, 11, true);
+    line(`Payments total: ${money(r.paymentsTotal)}`, 11, true);
+    line(`Net cash flow: ${money(r.net)}`, 11, true);
+    y += 10;
+
+    line('Sales', 13, true);
+    if(!r.sales.length) line('  No sales in range', 10);
+    r.sales.forEach(x => line(`  ${x.Date||''}  ${x.DealerName||''}  ${x.Item||''}  ${money(x.Amount)}`, 9.5));
+    y += 6;
+
+    line('Purchases', 13, true);
+    if(!r.purchases.length) line('  No purchases in range', 10);
+    r.purchases.forEach(x => line(`  ${x.Date||''}  ${x.DealerName||''}  ${x.Item||''}  ${money(x.Amount)}`, 9.5));
+    y += 6;
+
+    line('Payments', 13, true);
+    if(!r.payments.length) line('  No payments in range', 10);
+    r.payments.forEach(x => line(`  ${x.Date||''}  ${x.DealerName||''}  ${x.Method||''}  ${money(x.Amount)}`, 9.5));
+
+    doc.save(`business-manager-report-${r.from||'all'}_to_${r.to||'all'}.pdf`);
+  });
+
   loadAll();
 
   // --- Login gate ---
@@ -655,6 +935,7 @@
     document.getElementById('app').style.display = 'block';
     const u = localStorage.getItem(AUTH_KEY);
     if($('#settingsUser')) $('#settingsUser').textContent = u || '—';
+    if($('#themeSelect')) $('#themeSelect').value = localStorage.getItem(THEME_KEY) || 'dark';
     loadAll();
   }
   function showLogin(){
@@ -686,12 +967,19 @@
     showLogin();
   }
 
-  // --- PWA install ---
   let deferredPrompt;
   window.addEventListener('beforeinstallprompt', e=>{
     e.preventDefault(); deferredPrompt = e;
     $('#installBtn').style.display = 'inline-block';
   });
+  if($('#themeSelect')){
+    $('#themeSelect').addEventListener('change', e=>{
+      localStorage.setItem(THEME_KEY, e.target.value);
+      applyTheme(e.target.value);
+    });
+  }
+
+  // --- PWA install ---
   $('#installBtn').addEventListener('click', async ()=>{
     if(!deferredPrompt) return;
     deferredPrompt.prompt();
